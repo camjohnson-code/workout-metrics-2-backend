@@ -15,8 +15,12 @@ app.get('/health', (req, res) => {
 });
 
 // Error handling middleware
-app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error(err.stack);
+app.use((err: unknown, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  if (err instanceof Error) {
+    console.error(err.stack);
+  } else {
+    console.error('An unknown error occurred');
+  }
   res.status(500).json({ error: 'Something went wrong!' });
 });
 

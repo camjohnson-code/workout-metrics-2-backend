@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import authRoutes from './routes/auth.routes';
 
 const app = express();
 
@@ -23,5 +24,7 @@ app.use((err: unknown, req: express.Request, res: express.Response, next: expres
   }
   res.status(500).json({ error: 'Something went wrong!' });
 });
+
+app.use('/api/auth', authRoutes);
 
 export default app;

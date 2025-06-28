@@ -11,9 +11,6 @@ export const authController = {
   async handleCallback(req: Request, res: Response) {
     const { code } = req.query;
 
-    console.log('request received:', req);
-    console.log('Authorization code:', code);
-
     try {
       // Validate that we have the required parameters
       if (!code) {
@@ -23,14 +20,11 @@ export const authController = {
 
       // Exchange the authorization code for access tokens
       const tokens = await stravaService.authenticate(code as string);
-      console.log('Received tokens:', tokens);
 
       try {
         const now = new Date().toISOString();
         const tokenInsert = mapToStravaTokenInsert(tokens, now);
         const { error } = await supabase.from('strava_tokens').insert(tokenInsert);
-
-        console.log('TOKEN INSERT', tokenInsert);
 
         if (error && error.code === '23505') {
           // Convert timestamps to comparable date objects
@@ -101,16 +95,13 @@ export const authController = {
   async handleDownloadingActivities(req: Request, res: Response) {
     try {
       const { userId } = req.query;
-      console.log('received userId:', userId);
 
       if (!userId) {
         return res.status(400).json({ error: 'User ID required' });
       }
 
       const accessToken = await stravaService.getAccessToken(userId as string);
-      console.log('got access token:', accessToken);
       const activities = await stravaService.getActivities(accessToken);
-      console.log('got activities:', activities);
 
       const now = new Date().toISOString();
 

@@ -58,11 +58,11 @@ export const authController = {
         const { error } = await supabase.from('users').insert(athleteInsert);
 
         if (error) {
-          console.error('Error inserting into strava_tokens:', error);
+          console.error('Error inserting into users:', error);
           return res.status(500).json({ error: 'Failed to store Strava user' });
         }
       } catch (err) {
-        console.error('Unexpected error inserting into strava_tokens:', err);
+        console.error('Unexpected error inserting into users:', err);
         return res.status(500).json({ error: 'Unexpected error storing Strava user' });
       }
 

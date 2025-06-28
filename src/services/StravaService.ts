@@ -34,8 +34,6 @@ import supabase from '../supabaseClient';
 export class StravaService {
   private clientId = process.env.STRAVA_CLIENT_ID;
   private clientSecret = process.env.STRAVA_CLIENT_SECRET;
-  private redirectUri = process.env.STRAVA_REDIRECT_URI;
-
   async authenticate(code: string) {
     try {
       console.log('Authenticating with code:', code);

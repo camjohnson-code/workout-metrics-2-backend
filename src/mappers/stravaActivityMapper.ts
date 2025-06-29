@@ -65,6 +65,7 @@ export function mapToStravaActivityInsert(
   userId: number,
   now?: string
 ): StravaActivityInsert {
+  const timestamp = now ?? new Date().toISOString();
   return {
     id: activity.id,
     athlete_id: userId,

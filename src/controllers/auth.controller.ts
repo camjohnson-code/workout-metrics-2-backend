@@ -156,4 +156,25 @@ export const authController = {
       res.status(500).json({ error: 'Failed to download activities' });
     }
   },
+
+  async verifySession(req: Request, res: Response) {
+    try {
+      const { sessionId } = req.cookies;
+
+      if (!sessionId) {
+        return res.status(401).json({ authenticated: false });
+      }
+
+      const session = await redisService.getSession(sessionId);
+
+      if (!session) {
+        return res.status(401).json({ authenticated: false });
+      }
+
+      res.json({ authenticated: true });
+    } catch (error) {
+      console.error('Session verification error:', error);
+      res.status(500).json({ authenticated: false });
+    }
+  },
 };

@@ -1,11 +1,12 @@
-// controllers/auth.controller.ts
 import { Request, Response } from 'express';
 import { StravaService } from '../services/StravaService';
 import supabase from '../supabaseClient';
 import { mapToStravaTokenInsert, mapToStravaAthleteInsert } from '../mappers/stravaTokenMapper';
 import { mapToStravaActivityInsert } from '../mappers/stravaActivityMapper';
+import RedisService from '../services/RedisService';
 
 const stravaService = new StravaService();
+const redisService = new RedisService();
 
 export const authController = {
   async handleCallback(req: Request, res: Response) {
@@ -21,11 +22,13 @@ export const authController = {
       // Exchange the authorization code for access tokens
       const tokens = await stravaService.authenticate(code as string);
 
+      // Add athlete tokens to database
       try {
         const now = new Date().toISOString();
         const tokenInsert = mapToStravaTokenInsert(tokens, now);
         const { error } = await supabase.from('strava_tokens').insert(tokenInsert);
 
+        // Case for when athlete already exists in database
         if (error && error.code === '23505') {
           // Convert timestamps to comparable date objects
           const tokenExpiryDate = new Date(tokenInsert.expires_at);
@@ -34,6 +37,18 @@ export const authController = {
           // If token is expired, refresh it
           if (tokenExpiryDate <= currentDate)
             await stravaService.refreshToken(`${tokens.athlete.id}`);
+
+          // Create session for existing user
+          const session = await redisService.updateOrCreateSession(`${tokens.athlete.id}`);
+
+          // Set session cookie
+          res.cookie('sessionId', session.sessionId, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            maxAge: 14 * 24 * 60 * 60 * 1000, // 14 days in milliseconds
+            expires: new Date(session.expiresAt),
+          });
 
           // Navigate to /dashboard
           const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
@@ -52,6 +67,7 @@ export const authController = {
         return res.status(500).json({ error: 'Unexpected error storing Strava tokens' });
       }
 
+      // Add athlete to database
       try {
         const now = new Date().toISOString();
         const athleteInsert = mapToStravaAthleteInsert(tokens.athlete, now);
@@ -65,6 +81,18 @@ export const authController = {
         console.error('Unexpected error inserting into users:', err);
         return res.status(500).json({ error: 'Unexpected error storing Strava user' });
       }
+
+      // Create session for new user
+      const session = await redisService.updateOrCreateSession(`${tokens.athlete.id}`);
+
+      // Set session cookie
+      res.cookie('sessionId', session.sessionId, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 14 * 24 * 60 * 60 * 1000, // 14 days in milliseconds
+        expires: new Date(session.expiresAt),
+      });
 
       const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
       const redirectUrl = `${frontendUrl}/downloading-activities?auth=success&id=${tokens.athlete.id}`;

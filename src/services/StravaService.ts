@@ -36,8 +36,6 @@ export class StravaService {
   private clientSecret = process.env.STRAVA_CLIENT_SECRET;
   async authenticate(code: string) {
     try {
-      console.log('Authenticating with code:', code);
-
       if (!this.clientId || !this.clientSecret) {
         throw new Error('Missing Strava client credentials');
       }
@@ -63,7 +61,6 @@ export class StravaService {
       }
 
       const tokenData = (await tokenResponse.json()) as StravaTokenResponse;
-      console.log('Token exchange successful:', tokenData);
 
       return {
         accessToken: tokenData.access_token,
@@ -175,7 +172,6 @@ export class StravaService {
         await new Promise((resolve) => setTimeout(resolve, 100));
       }
 
-      console.log(`Fetched ${allActivities.length} total activities`);
       return allActivities;
     } catch (error) {
       console.error('Error fetching activities:', error);
